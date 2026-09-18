@@ -1,8 +1,8 @@
 # Remote Editor
 
-Adds an **Editor** pill to the composer track bar. Pick VS Code or Zed and it opens the
-agent's workspace directly over SSH in that editor, connected to the machine running the
-Paseo daemon.
+Adds an **Editor** pill to the composer track bar. It opens the agent's workspace
+directly in VS Code, Cursor, or Zed — over SSH when the Paseo daemon runs on another
+machine, or as a local folder when it runs on yours.
 
 The pill only appears on desktop (not iOS/Android), since opening a local editor via a
 deep link only makes sense from a desktop OS.
@@ -13,18 +13,32 @@ deep link only makes sense from a desktop OS.
 paseo plugin add alhassanaraouf/paseo-remote-editor
 ```
 
+## Settings (Remote Editor)
+
+- **Open in** — default editor (VS Code, Cursor, Zed, or a custom editor).
+- **SSH host / user** — blank falls back to what the daemon reports
+  (`os.hostname()` / `os.userInfo().username`). Set these when the daemon's hostname
+  doesn't resolve locally: a Tailscale name, LAN name, or an `~/.ssh/config` alias.
+- **SSH port** — appended as `:port` in Zed and custom URIs. VS Code-style URIs carry
+  no port, so a non-standard port there needs an `~/.ssh/config` alias entered as the
+  SSH host instead.
+- **Open local paths directly** — enable when the daemon runs on this machine, so the
+  editor opens the folder (`vscode://file/...`, `zed://file://...`) instead of SSH.
+- **Custom editors** — add your own via URI templates using `{user}`, `{host}`,
+  `{port}`, and `{path}`.
+
 ## How it works
 
-- VS Code: opens `vscode://vscode-remote/ssh-remote+<user>@<host>/<path>`
-- Zed: opens `zed://ssh/<user>@<host>/<path>`
+- VS Code / Cursor: `vscode://vscode-remote/ssh-remote+<user>@<host>/<path>`
+  (or `vscode://file/<path>` in local mode)
+- Zed: `zed://ssh/<user>@<host>[:<port>]/<path>`
+  (or `zed://file://<path>` in local mode)
 
-`<user>` and `<host>` come from the daemon machine's own `os.userInfo().username` and
-`os.hostname()`; `<path>` is the agent's working directory.
+`<path>` is the agent's working directory, percent-encoded per segment so spaces and
+special characters survive the deep link.
 
 ## Limitations
 
-- Requires VS Code's Remote-SSH extension or Zed's SSH remote support to already be set up,
-  including a working `ssh <user>@<host>` connection from your machine.
-- Uses the daemon's reported hostname, so it needs to resolve from your machine (matches your
-  `~/.ssh/config` alias, LAN name, or Tailscale name) — no custom port or SSH alias override yet.
+- Requires the editor's remote/SSH support to already be set up, including a working
+  `ssh <user>@<host>` connection from your machine.
 - Not shown on iOS or Android.
