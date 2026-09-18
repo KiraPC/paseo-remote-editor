@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Pressable, Text, View } from "react-native";
 import { editorPreferences } from "../shared/settings";
 import { machineInfoRpc } from "../shared/machine";
-import { allEditors, type Editor } from "./editors";
+import { allEditors, resolveSshTarget, type Editor } from "./editors";
 import { openEditorUri } from "./openEditorUri";
 
 export function EditorPillContent(props: PluginButtonContentProps) {
@@ -17,14 +17,10 @@ export function EditorPillContent(props: PluginButtonContentProps) {
   const settings = useSettings(editorPreferences);
   const opened = useRef(false);
 
-  const editors = useMemo(
-    () => (settings.status === "ready" ? allEditors(settings.values.customEditors) : []),
-    [settings.status === "ready" ? settings.values.customEditors : null],
-  );
+  const values = settings.status === "ready" ? settings.values : null;
+  const editors = useMemo(() => (values ? allEditors(values.customEditors) : []), [values]);
   const defaultEditor =
-    settings.status === "ready"
-      ? (editors.find((editor) => editor.id === settings.values.defaultEditorId) ?? editors[0])
-      : undefined;
+    values != null ? (editors.find((editor) => editor.id === values.defaultEditorId) ?? editors[0]) : undefined;
 
   const styles = useMemo(
     () => ({
@@ -36,11 +32,21 @@ export function EditorPillContent(props: PluginButtonContentProps) {
     [theme],
   );
 
-  const ready = Boolean(cwd && machine.data && defaultEditor);
+  const ready = Boolean(cwd && machine.data && defaultEditor && values);
 
   async function openIn(editor: Editor) {
-    if (!cwd || !machine.data) return;
-    await openEditorUri(editor.build(machine.data.username, machine.data.hostname, cwd));
+    if (!cwd || !machine.data || !values) return;
+    const uri = values.preferLocal
+      ? editor.buildLocal(cwd)
+      : editor.buildRemote(
+          resolveSshTarget(machine.data, {
+            sshHost: values.sshHost,
+            sshUser: values.sshUser,
+            sshPort: values.sshPort,
+          }),
+          cwd,
+        );
+    await openEditorUri(uri);
     close();
   }
 

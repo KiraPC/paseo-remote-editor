@@ -1,29 +1,51 @@
-function sshTarget(username: string, hostname: string): string {
-  return username + "@" + hostname;
+export interface SshTarget {
+  username: string;
+  hostname: string;
+  port: number;
+}
+
+function sshAuthority(target: SshTarget): string {
+  return target.username + "@" + target.hostname;
+}
+
+function encodePath(path: string): string {
+  return path
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
 }
 
 // VS Code and its forks (Cursor, ...) all use the same vscode-remote/ssh-remote+ scheme,
-// swapping only the URI's leading app scheme.
-function vscodeStyleRemoteUri(
-  scheme: string,
-  username: string,
-  hostname: string,
-  path: string,
-): string {
-  return scheme + "://vscode-remote/ssh-remote+" + sshTarget(username, hostname) + path;
+// swapping only the URI's leading app scheme. The ssh-remote authority carries no port,
+// so a non-standard port needs an ~/.ssh/config alias entered as the SSH host.
+function vscodeStyleRemoteUri(scheme: string, target: SshTarget, path: string): string {
+  return scheme + "://vscode-remote/ssh-remote+" + sshAuthority(target) + encodePath(path);
 }
 
-export function vscodeRemoteUri(username: string, hostname: string, path: string): string {
-  return vscodeStyleRemoteUri("vscode", username, hostname, path);
+export function vscodeRemoteUri(target: SshTarget, path: string): string {
+  return vscodeStyleRemoteUri("vscode", target, path);
 }
 
-export function cursorRemoteUri(username: string, hostname: string, path: string): string {
-  return vscodeStyleRemoteUri("cursor", username, hostname, path);
+export function cursorRemoteUri(target: SshTarget, path: string): string {
+  return vscodeStyleRemoteUri("cursor", target, path);
 }
 
-// Zed's zed:// scheme is the same across the Stable, Preview, and Nightly release
-// channels (ZED_URL_SCHEME is a fixed "zed" constant); whichever build is registered
-// as the OS handler for it is the one that opens.
-export function zedRemoteUri(username: string, hostname: string, path: string): string {
-  return "zed://ssh/" + sshTarget(username, hostname) + path;
+// zed://ssh/[<user>@]<host>[:<port>]/<path>. The default SSH port is omitted.
+export function zedRemoteUri(target: SshTarget, path: string): string {
+  const port = target.port === 22 ? "" : ":" + target.port;
+  return "zed://ssh/" + sshAuthority(target) + port + encodePath(path);
+}
+
+// Local fast-path: the daemon runs on the same machine as the client, so skip SSH.
+export function vscodeLocalUri(path: string): string {
+  return "vscode://file" + encodePath(path);
+}
+
+export function cursorLocalUri(path: string): string {
+  return "cursor://file" + encodePath(path);
+}
+
+// zed://file://<absolute-path>
+export function zedLocalUri(path: string): string {
+  return "zed://file://" + encodePath(path).replace(/^\/+/, "");
 }

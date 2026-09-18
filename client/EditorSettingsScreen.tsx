@@ -7,11 +7,61 @@ import {
   SettingsRow,
   SettingsSection,
   SettingsSelect,
+  SettingsSwitch,
 } from "@getpaseo/plugin/client/ui";
 import { useState } from "react";
 import { Text } from "react-native";
 import { editorPreferences } from "../shared/settings";
 import { allEditors } from "./editors";
+import type { z } from "zod";
+
+type Values = z.output<(typeof editorPreferences)["schema"]>;
+
+function ConnectionSection({ values, revision, save }: { values: Values; revision: string; save: (v: Values, r: string) => Promise<boolean> }) {
+  const [sshHost, setSshHost] = useState(values.sshHost);
+  const [sshUser, setSshUser] = useState(values.sshUser);
+  const [sshPort, setSshPort] = useState(String(values.sshPort));
+  const [error, setError] = useState<string | null>(null);
+
+  async function saveConnection() {
+    setError(null);
+    const port = Number.parseInt(sshPort.trim(), 10);
+    if (!Number.isInteger(port) || port < 1 || port > 65535) {
+      setError("Port must be a number from 1 to 65535.");
+      return;
+    }
+    const ok = await save(
+      { ...values, sshHost: sshHost.trim(), sshUser: sshUser.trim(), sshPort: port },
+      revision,
+    );
+    if (!ok) setError("Could not save. Try again.");
+  }
+
+  return (
+    <SettingsSection
+      title="SSH connection"
+      info="Blank host/user fall back to what the daemon reports. The host can be an ~/.ssh/config alias."
+    >
+      <SettingsCard>
+        <SettingsInput label="SSH host" placeholder="(daemon hostname)" initialValue={sshHost} onChangeText={setSshHost} />
+        <SettingsInput label="SSH user" placeholder="(daemon user)" initialValue={sshUser} onChangeText={setSshUser} />
+        <SettingsInput label="SSH port" placeholder="22" initialValue={sshPort} onChangeText={setSshPort} />
+        <SettingsSwitch
+          label="Open local paths directly"
+          hint="Enable when the daemon runs on this machine, so the editor opens the folder instead of connecting over SSH."
+          value={values.preferLocal}
+          onValueChange={(preferLocal) => save({ ...values, preferLocal }, revision)}
+        />
+        <SettingsAction
+          label="Connection"
+          actionLabel="Save"
+          error={error ?? undefined}
+          onPress={saveConnection}
+        />
+      </SettingsCard>
+    </SettingsSection>
+  );
+}
 
 export function EditorSettingsScreen({ theme }: PluginSurfaceProps) {
   const settings = useSettings(editorPreferences);
@@ -75,7 +125,8 @@ export function EditorSettingsScreen({ theme }: PluginSurfaceProps) {
           />
         </SettingsCard>
       </SettingsSection>
-      <SettingsSection title="Custom editors" info="Use {user}, {host}, and {path} in the URI template.">
+      <ConnectionSection values={values} revision={revision} save={save} />
+      <SettingsSection title="Custom editors" info="Use {user}, {host}, {port}, and {path} in the URI template.">
         <SettingsCard>
           {values.customEditors.map((editor) => (
             <SettingsRow key={editor.id} label={editor.label} hint={editor.uriTemplate}>
@@ -86,7 +137,7 @@ export function EditorSettingsScreen({ theme }: PluginSurfaceProps) {
           <SettingsInput label="Label" placeholder="Cursor" onChangeText={setDraftLabel} />
           <SettingsInput
             label="URI template"
-            hint="Use {user}, {host}, and {path}, e.g. cursor://ssh/{user}@{host}{path}"
+            hint="Use {user}, {host}, {port}, and {path}, e.g. cursor://ssh/{user}@{host}{path}"
             placeholder="cursor://ssh/{user}@{host}{path}"
             onChangeText={setDraftTemplate}
           />
