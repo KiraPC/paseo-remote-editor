@@ -10,10 +10,10 @@ deep link only makes sense from a desktop OS.
 ## Install
 
 ```bash
-paseo plugin install npm:paseo-remote-editor
+paseo plugin install npm:@alhassanaraouf/paseo-remote-editor
 ```
 
-Or paste `npm:paseo-remote-editor` into **Settings → Plugins → Plugin source**
+Or paste `npm:@alhassanaraouf/paseo-remote-editor` into **Settings → Plugins → Plugin source**
 and select **Install plugin**.
 
 ## Settings (Remote Editor)
