@@ -1,6 +1,6 @@
 {
   "name": "paseo-remote-editor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Composer pill to open a workspace in VS Code or Zed over SSH, desktop only.",
   "author": "Al-Hassan Abdel-Raouf",
   "license": "MIT",
@@ -24,6 +24,7 @@
     "shared/"
   ],
   "scripts": {
+    "test": "node --import tsx --test tests/",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
@@ -33,6 +34,7 @@
     "@types/react": "~19.2.0",
     "react": "19.1.0",
     "react-native": "0.81.5",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "zod": "^4.4.3"
   }
