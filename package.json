@@ -1,10 +1,28 @@
 {
-  "name": "remote-editor",
+  "name": "paseo-remote-editor",
+  "version": "0.1.0",
   "description": "Composer pill to open a workspace in VS Code or Zed over SSH, desktop only.",
   "author": "Al-Hassan Abdel-Raouf",
   "license": "MIT",
-  "private": true,
-  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alhassanaraouf/paseo-remote-editor.git"
+  },
+  "homepage": "https://github.com/alhassanaraouf/paseo-remote-editor#readme",
+  "keywords": [
+    "paseo",
+    "paseo-plugin"
+  ],
+  "files": [
+    "paseo-plugin.json",
+    "index.client.ts",
+    "index.client.tsx",
+    "index.server.ts",
+    "index.server.tsx",
+    "client/",
+    "server/",
+    "shared/"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
