@@ -1,0 +1,33 @@
+name: Publish to npm
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - name: Publish if version is new
+        run: |
+          NAME=$(npm pkg get name | tr -d '"')
+          VERSION=$(npm pkg get version | tr -d '"')
+          if npm view "$NAME@$VERSION" version 2>/dev/null; then
+            echo "$NAME@$VERSION already on npm, skipping publish"
+          else
+            npm publish --access public
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
